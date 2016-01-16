@@ -18,7 +18,7 @@ import string
 import contextlib
 import collections
 import time
-
+import os
 import esbench
 import esbench.api
 
@@ -41,8 +41,8 @@ def urls(url_template=None, count=75):
             yield (url_template % (year, postfix))
 
 
-def download(url, tmpd="/tmp", timeout=1):
-
+def download(url, tmpd="/mnt/esbench_data", timeout=1):
+    os.system("mkdir -p %s" % tmpd)
     fn = os.path.basename(url)
     fn = os.path.abspath(os.path.join(tmpd, fn))
 

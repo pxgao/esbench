@@ -114,6 +114,8 @@ class Observation(object):
     """
 
     _count = 0
+    total_query = 0
+    total_time = 0
 
     def __init__(
             self,
@@ -143,7 +145,6 @@ class Observation(object):
 
 
     def run(self):
-
         self.ts_start = timestamp()
         logger.info("beginning observation no: %i, %s", self.observation_sequence_no, self.ts_start)
         t1 = time.time()
@@ -154,11 +155,12 @@ class Observation(object):
                 query.execute(self.conn)
             query.t_client = time.time() - tA
             logger.info("ran query '%s' %i times in %.2fs", query.name, self.reps, query.t_client)
+            self.total_query += self.reps
+            self.total_time += query.t_client
 
         self.ts_stop = timestamp()
         logger.info("finished observation no: %i, id: %s, time: %.3f",
             self.observation_sequence_no, self.observation_id, time.time()-t1)
-
 
     def _segments(self, segments_f=esbench.api.index_get_segments):
         """Get and massage segment stats data.
@@ -248,8 +250,8 @@ class Observation(object):
                     try:
                         cluster_stats['nodes'][node]['indices']['fielddata']['fields'] = fielddata_stats['nodes'][node]['indices']['fielddata']['fields']
                     except KeyError:
-                        logger.warning("couldn't get fielddata stats for node: %s", node)
-
+#                        logger.warning("couldn't get fielddata stats for node: %s", node)
+                         pass
             except (TypeError, IOError) as exc:
                 logger.warning("couldn't get cluster fielddata stats: %s", exc)
 
@@ -350,26 +352,29 @@ class Benchmark(object):
 
 
     def run(self, batches):
-
-        index_settings = {"settings" : {"index" : {"number_of_shards" : 1, "number_of_replicas" : 0}}}
+        index_settings = {"settings" : {"index" : {"number_of_shards" : 1, "number_of_replicas" : 3}}}
         esbench.api.index_create(self.conn, esbench.STATS_INDEX_NAME, index_settings)
 
         if not self.config['config']['append']:
-            esbench.api.index_delete(self.conn, esbench.TEST_INDEX_NAME)
+            #esbench.api.index_delete(self.conn, esbench.TEST_INDEX_NAME)
             esbench.api.index_create(self.conn, esbench.TEST_INDEX_NAME, self.config['index'])
 
         total_count = 0
         total_size_b = 0
+        total_query = 0
+        total_time = 0.0
         for batch in batches:
             count, size_b = self.load(batch)
             if not count:
                 break
             total_count += count
             total_size_b += size_b
-            self.observe()
+            ob = self.observe()
+            total_query = ob.total_query
+            total_time = ob.total_time
 
         logger.info("load complete; loaded total %i lines into index '%s', total size: %i (%.2fmb)", total_count, esbench.TEST_INDEX_NAME, total_size_b, total_size_b/(1<<20))
-
+        return total_query / total_time
 
     def _get_cluster_info(self, cluster_f=esbench.api.cluster_get_info):
 

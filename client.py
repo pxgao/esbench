@@ -37,6 +37,7 @@ curl -XDELETE localhost:9200/esbench_* # delete existing benchmarks
 """
 
     parser_run = subparsers.add_parser('run', help='run a benchmark', epilog=epilog_run, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser_run.add_argument('--prepare', action='store_true')
     parser_run.add_argument('-v', '--verbose', action='store_true')
     parser_run.add_argument('--host', type=str, default='localhost', help='elasticsearch host; (%(default)s)')
     parser_run.add_argument('--port', type=int, default=9200, help='elasticsearch port; (%(default)s)')
@@ -94,7 +95,6 @@ the fields into a csv and graph /analyze it with whatever you have.
     parser_dump.add_argument('--host', type=str, default='localhost', help='elasticsearch host; (%(default)s)')
     parser_dump.add_argument('--port', type=int, default=9200, help='elasticsearch port; (%(default)s)')
     parser_dump.add_argument('ids', nargs='*', default=['all'], help='benchmark ids; (default: show all benchmarks)')
-
     return parser
 
 
@@ -161,8 +161,16 @@ def main():
         try:
 
             if args.command == 'run':
-
                 config = merge_config(args, load_config(args.config_file_path))
+                if args.prepare:
+                    print "Preparing ", config['config']['max_byte_size']
+                    total = 0
+                    urls_iter = esbench.data.urls(esbench.data.URL_TEMPLATE)
+                    while total < config['config']['max_byte_size']:
+                        url = next(urls_iter)
+                        f = esbench.data.download(url)
+                        total += os.path.getsize(f)
+                    return
                 benchmark = esbench.bench.Benchmark(config=config, conn=conn)
                 benchmark.prepare()
                 if config['config']['no_load']:
@@ -170,9 +178,9 @@ def main():
                         benchmark.observe()
                 else:
                     with esbench.data.feed(path=config['config']['data']) as feed:
-                        batches = esbench.data.batches_iterator(lines=feed, batch_count=config['config']['observations'], max_n=config['config']['max_n'], max_byte_size=config['config']['max_byte_size'])
-                        benchmark.run(batches)
-
+                            batches = esbench.data.batches_iterator(lines=feed, batch_count=config['config']['observations'], max_n=config['config']['max_n'], max_byte_size=config['config']['max_byte_size'])
+                            thru = benchmark.run(batches)
+                            print "Throughput is %s" % thru
                 benchmark.record()
 
             elif args.command == 'show':
