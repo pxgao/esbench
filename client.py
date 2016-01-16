@@ -181,6 +181,7 @@ def main():
                             batches = esbench.data.batches_iterator(lines=feed, batch_count=config['config']['observations'], max_n=config['config']['max_n'], max_byte_size=config['config']['max_byte_size'])
                             thru = benchmark.run(batches)
                             print "Throughput is %s" % thru
+                            os.system("echo %s > /mnt/esbench_throughput" % thru)
                 benchmark.record()
 
             elif args.command == 'show':
