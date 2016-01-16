@@ -1,0 +1,71 @@
+{
+
+    "queries": {
+
+        "match_description": {
+            "fields": [
+                "description"
+            ], 
+            "from": 0, 
+            "query": {
+                "match": {
+                    "description": "computing V%(variable)s device portable"
+                }
+            }, 
+            "size": 10
+        }, 
+
+        "match_description_sorted_abstract": {
+            "fields": [
+                "description"
+            ], 
+            "from": 0, 
+            "query": {
+                "match": {
+                    "description": "computing V%(variable)s device portable"
+                }
+            }, 
+            "size": 10, 
+            "sort": [
+                {
+                    "abstract": "desc"
+                }
+            ]
+        } 
+    }, 
+
+    "index": {
+        "mappings": {
+            "doc": {
+                "_size": {
+                    "enabled": true, 
+                    "store": "yes"
+                }, 
+                "_source": {
+                    "enabled": true
+                }, 
+                "properties": {
+                    "abstract": {
+                        "store": "yes", 
+                        "type": "string"
+                    }
+                }
+            }
+        }, 
+        "settings": {
+            "index": {
+                "number_of_replicas": 3, 
+                "number_of_shards": 1
+            }
+        }
+    }, 
+
+    "config": {
+        "observations": 10, 
+        "segments": null, 
+        "reps": 100, 
+        "append": false
+    } 
+    
+}
+
