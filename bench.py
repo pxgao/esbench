@@ -355,10 +355,11 @@ class Benchmark(object):
         index_settings = {"settings" : {"index" : {"number_of_shards" : 1, "number_of_replicas" : 3}}}
         esbench.api.index_create(self.conn, esbench.STATS_INDEX_NAME, index_settings)
 
-        if not self.config['config']['append']:
+        #if not self.config['config']['append']:
             #esbench.api.index_delete(self.conn, esbench.TEST_INDEX_NAME)
-            esbench.api.index_create(self.conn, esbench.TEST_INDEX_NAME, self.config['index'])
+        esbench.api.index_create(self.conn, esbench.TEST_INDEX_NAME, self.config['index'])
 
+        os.system("curl -XPUT 'localhost:9200/esbench_test/_settings' -d '{ \"index\" : {\"number_of_replicas\" : 3}}'")
         total_count = 0
         total_size_b = 0
         total_query = 0
