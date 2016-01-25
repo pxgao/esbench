@@ -30,6 +30,7 @@ import string
 
 import esbench.api
 import esbench.data
+import os
 
 
 logger = logging.getLogger(__name__)
